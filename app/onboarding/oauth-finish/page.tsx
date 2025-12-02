@@ -39,6 +39,12 @@ export default function OAuthFinishPage() {
           const j = await res.json().catch(() => ({}));
           throw new Error(j.error || "Failed to save profile");
         }
+        // Save preferences linked to user too
+        const prefsRes = await fetch("/api/preferences", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ role: data.role, ...(data.autismProfile || {}) }),
+        });
         // Clear cache and go
         localStorage.removeItem("onboardingData");
         router.replace("/dashboard");

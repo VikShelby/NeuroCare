@@ -1,22 +1,4 @@
-import mongoose, { Schema, models, Model } from "mongoose";
-
-export interface IExperience {
-  name?: string | null;
-  company?: string | null;
-  location?: string | null;
-  startDate?: Date | null;
-  endDate?: Date | null;
-  description?: string | null;
-}
-
-export interface IEducation {
-  school?: string | null;
-  degree?: string | null;
-  fieldOfStudy?: string | null;
-  startDate?: Date | null;
-  endDate?: Date | null;
-  description?: string | null;
-}
+import mongoose, { Schema, models, Model, Types } from "mongoose";
 
 export interface IUser {
   name?: string | null;
@@ -28,17 +10,17 @@ export interface IUser {
   resetPasswordExpires?: Date | null;
   // Profile fields
   role?: "caree" | "caregiver" | null;
-  category?: string | null;
-  professionalRole?: string | null;
-  skills?: string[];
-  experiences?: IExperience[];
-  education?: IEducation[];
-  languages?: string[];
+  gender?: string | null;
+  pronouns?: string | null;
+    // Removed legacy freelancing fields: category, professionalRole, skills, experiences, education, languages
   bio?: string | null;
-  paymentRate?: number | null; // hourly or project rate
+    // Removed legacy paymentRate
   dateOfBirth?: Date | null;
   profileCompleted?: boolean;
-  autismProfile?: {
+  // Relationships
+  caregiverId?: Types.ObjectId | null; // set on caree
+  careeIds?: Types.ObjectId[] | null;  // set on caregiver
+    autismProfile?: {
     aboutMe?: string | null;
     interests?: string[];
     sensoryPreferences?: string | null;
@@ -48,37 +30,30 @@ export interface IUser {
     communicationNotes?: string | null;
     careGoals?: string | null;
     diagnosis?: string | null; // caree-specific optional
-    supportNeeds?: string | null; // caree-specific optional
+    formalDiagnosis?: string | null; // caree-specific optional (Yes/No/Prefer not to say)
     caregiverSkills?: string[]; // caregiver-specific optional
     availability?: string | null; // caregiver-specific optional
-  } | null;
+      // New QA fields
+      anxietyFrequency?: string | null;
+      focusEase?: number | null;
+      overwhelmFrequency?: string | null;
+      preferredCommunication?: string | null;
+      eyeContactComfort?: number | null;
+      usesAAC?: string | null;
+      sensorySensitivity?: number | null;
+      texturesUncomfortable?: string | null;
+      sensorySeeking?: number | null;
+      routineImportance?: number | null;
+      upsetByChange?: number | null;
+      useOrganizationTools?: string | null;
+      favoriteHobbies?: string[] | null;
+      specialInterestTime?: string | null;
+      absorptionLevel?: number | null;
+      socialComfort?: number | null;
+      preferAloneVsOthers?: number | null;
+      hardSocialCues?: string[] | null;
+    } | null;
 }
-
-export interface IUserDocument extends IUser, Document {}
-
-const ExperienceSchema = new Schema<IExperience>(
-  {
-    name: { type: String },
-    company: { type: String },
-    location: { type: String },
-    startDate: { type: Date },
-    endDate: { type: Date },
-    description: { type: String },
-  },
-  { _id: false }
-);
-
-const EducationSchema = new Schema<IEducation>(
-  {
-    school: { type: String },
-    degree: { type: String },
-    fieldOfStudy: { type: String },
-    startDate: { type: Date },
-    endDate: { type: Date },
-    description: { type: String },
-  },
-  { _id: false }
-);
 
 const UserSchema = new Schema<IUser>(
   {
@@ -90,16 +65,15 @@ const UserSchema = new Schema<IUser>(
     resetPasswordToken: { type: String },
     resetPasswordExpires: { type: Date },
     role: { type: String, enum: ["caree", "caregiver"], default: undefined },
-    category: { type: String },
-    professionalRole: { type: String },
-    skills: [{ type: String }],
-    experiences: [ExperienceSchema],
-    education: [EducationSchema],
-    languages: [{ type: String }],
+    gender: { type: String },
+    pronouns: { type: String },
+      // Legacy freelancing fields removed
     bio: { type: String },
-    paymentRate: { type: Number },
+      // paymentRate removed
     dateOfBirth: { type: Date },
     profileCompleted: { type: Boolean, default: false },
+    caregiverId: { type: Schema.Types.ObjectId, ref: "User", default: null },
+    careeIds: { type: [{ type: Schema.Types.ObjectId, ref: "User" }], default: [] },
     autismProfile: {
       aboutMe: { type: String },
       interests: [{ type: String }],
@@ -110,9 +84,28 @@ const UserSchema = new Schema<IUser>(
       communicationNotes: { type: String },
       careGoals: { type: String },
       diagnosis: { type: String },
-      supportNeeds: { type: String },
+      formalDiagnosis: { type: String },
       caregiverSkills: [{ type: String }],
       availability: { type: String },
+      // New QA fields
+      anxietyFrequency: { type: String },
+      focusEase: { type: Number },
+      overwhelmFrequency: { type: String },
+      preferredCommunication: { type: String },
+      eyeContactComfort: { type: Number },
+      usesAAC: { type: String },
+      sensorySensitivity: { type: Number },
+      texturesUncomfortable: { type: String },
+      sensorySeeking: { type: Number },
+      routineImportance: { type: Number },
+      upsetByChange: { type: Number },
+      useOrganizationTools: { type: String },
+      favoriteHobbies: [{ type: String }],
+      specialInterestTime: { type: String },
+      absorptionLevel: { type: Number },
+      socialComfort: { type: Number },
+      preferAloneVsOthers: { type: Number },
+      hardSocialCues: [{ type: String }],
     },
   },
   { timestamps: true }

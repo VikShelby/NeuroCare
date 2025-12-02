@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { LogoutButton } from "@/components/ui/logout-button";
 
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions);
@@ -13,6 +14,9 @@ export default async function DashboardPage() {
     <div className="max-w-4xl mx-auto py-12">
       <h1 className="text-3xl font-semibold mb-4">Dashboard</h1>
       <p className="text-muted-foreground mb-6">Welcome, your profile is complete. This is the protected dashboard area.</p>
+      <div className="mb-6">
+        <LogoutButton />
+      </div>
       <div className="rounded border p-6">Future dashboard content goes here.</div>
     </div>
   );

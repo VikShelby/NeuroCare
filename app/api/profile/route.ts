@@ -40,6 +40,8 @@ const autismProfileSchema = z.object({
 
 const profileSchema = z.object({
   role: z.enum(["caree", "caregiver"]).optional(),
+  gender: z.string().optional(),
+  pronouns: z.string().optional(),
   category: z.string().optional(),
   professionalRole: z.string().optional(),
   skills: z.array(z.string()).optional(),

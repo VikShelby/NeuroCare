@@ -452,7 +452,7 @@ export function Steps({
               transition={{ duration: 0.3 }}
               className={cn(
                 "relative z-50 rounded-full px-3 py-1 transition-all duration-300 ease-in-out md:flex",
-                isCompleted ? "bg-neutral-500/20" : "bg-neutral-500/20"
+                isCompleted ? "bg-black" : "bg-black"
               )}
             >
               <div
@@ -493,7 +493,7 @@ export function Steps({
                       <span
                         className={cn(
                           "text-xs",
-                          !isCurrent && "text-[#C6EA7E]"
+                          !isCurrent && "text-[#fff]"
                         )}
                       >
                         {stepIdx + 1}
@@ -506,7 +506,7 @@ export function Steps({
                     className={clsx(
                       "text-sm font-medium duration-300",
                       isCompleted && "text-muted-foreground",
-                      isCurrent && "text-lime-300 dark:text-lime-500",
+                      isCurrent && "text-white dark:text-lime-500",
                       isFuture && "text-neutral-500"
                     )}
                   >

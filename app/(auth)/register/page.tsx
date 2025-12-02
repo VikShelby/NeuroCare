@@ -47,14 +47,22 @@ export default function RegisterPage() {
     if (onboarding) {
       body.role = onboarding.role;
       if (onboarding.dateOfBirth) body.dateOfBirth = onboarding.dateOfBirth;
+      if (onboarding.gender) body.gender = onboarding.gender;
+      if (onboarding.pronouns) body.pronouns = onboarding.pronouns;
+      // Backward-compat: if older key 'communicationStyle' exists, map to gender
+      if (!body.gender && onboarding.communicationStyle) body.gender = onboarding.communicationStyle;
       if (onboarding.autismProfile) {
         const ap = onboarding.autismProfile;
-        body.autismProfile = {
-          ...ap,
-          interests: Array.isArray(ap.interests)
-            ? ap.interests
-            : (ap.interests ? String(ap.interests).split(/[\n,]/).map((s: string) => s.trim()).filter(Boolean) : []),
-        };
+        const mapped: any = { ...ap };
+        // Backward compat: legacy supportNeeds -> formalDiagnosis
+        if (mapped.supportNeeds && !mapped.formalDiagnosis) {
+          mapped.formalDiagnosis = mapped.supportNeeds;
+          delete mapped.supportNeeds;
+        }
+        mapped.interests = Array.isArray(mapped.interests)
+          ? mapped.interests
+          : (mapped.interests ? String(mapped.interests).split(/[\n,]/).map((s: string) => s.trim()).filter(Boolean) : []);
+        body.autismProfile = mapped;
       }
     }
     const res = await fetch("/api/auth/register", {
