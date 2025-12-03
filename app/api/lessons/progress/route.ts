@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { connectToDatabase } from "@/lib/db"
 import Lesson from "@/models/Lesson"
+import Preferences from "@/models/Preferences"
 
 export const dynamic = "force-dynamic"
 
@@ -76,4 +77,42 @@ export async function POST(req: NextRequest) {
   await lesson.save()
 
   return NextResponse.json({ ok: true, progress })
+}
+
+export async function GET(req: NextRequest) {
+  const session = (await getServerSession(authOptions as any)) as any
+  if (!session || !(session.user as any)?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  await connectToDatabase()
+
+  const { searchParams } = new URL(req.url)
+  const lessonId = searchParams.get("lessonId")
+  const userId = (session.user as any).id
+
+  let lesson: any = null
+  if (lessonId) {
+    lesson = await Lesson.findOne({ _id: lessonId, userId }).lean()
+  } else {
+    const pref = await Preferences.findOne({ userId }).lean()
+    if (pref?.currentLessonId) {
+      lesson = await Lesson.findOne({ _id: pref.currentLessonId, userId }).lean()
+    }
+    if (!lesson) {
+      lesson = await Lesson.findOne({ userId }).sort({ createdAt: -1 }).lean()
+    }
+  }
+
+  if (!lesson) return NextResponse.json({ progress: null, lessonId: null })
+
+  // Ensure progress shape and compute percent based on content steps
+  const progress = (lesson as any).progress || { currentStepIndex: 0, completedSteps: [], percent: 0 }
+  let stepsCount = 0
+  try {
+    const parsed = typeof (lesson as any).content === 'string' ? JSON.parse((lesson as any).content) : ((lesson as any).content || {})
+    stepsCount = Array.isArray(parsed?.steps) ? parsed.steps.length : 0
+  } catch {
+    stepsCount = 0
+  }
+  progress.percent = computePercent(stepsCount, progress.completedSteps || [])
+
+  return NextResponse.json({ progress, lessonId: (lesson as any)._id, stepsCount })
 }

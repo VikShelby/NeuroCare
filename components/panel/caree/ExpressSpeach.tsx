@@ -225,6 +225,9 @@ export default function RealtimeTranscriber() {
   const startSoundRef = useRef<HTMLAudioElement | null>(null)
   const endSoundRef = useRef<HTMLAudioElement | null>(null)
   const errorSoundRef = useRef<HTMLAudioElement | null>(null)
+  const audioContextRef = useRef<AudioContext | null>(null)
+const inputNodeRef = useRef<MediaStreamAudioSourceNode | null>(null)
+const micStreamRef = useRef<MediaStream | null>(null)
 
   const errorTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const lastOperationTimeRef = useRef(0)
@@ -274,6 +277,7 @@ export default function RealtimeTranscriber() {
           echoCancellation: true,
           noiseSuppression: true,
           autoGainControl: true,
+         
         },
       })
 
@@ -465,6 +469,18 @@ export default function RealtimeTranscriber() {
     setRecording({ error: "", latenciesMs: [] })
     clearSessionRefs()
 
+    // Proactively shut down any other audio sessions/components to avoid
+    // cross-AudioContext sample rate mismatches.
+    try {
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(
+          new CustomEvent('audio-shutdown', {
+            detail: { source: 'express-speech-support' }
+          })
+        )
+      }
+    } catch {}
+
     try {
       // Preflight mic check to surface helpful errors before attempting WS connect
       const mic = await preflightMic()
@@ -487,12 +503,13 @@ export default function RealtimeTranscriber() {
       }
 
       await scribe.connect({
-        token: result.token,
-        microphone: {
-          echoCancellation: true,
-          noiseSuppression: true,
-        },
-      })
+  token: result.token,
+  microphone: {
+    echoCancellation: true,
+    noiseSuppression: true,
+  },
+})
+
 
       // Check again after connect completes
       if (connectionStateRef.current !== "connecting") {

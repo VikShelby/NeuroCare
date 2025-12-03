@@ -1,6 +1,6 @@
 import NeumorphButton from '@/components/ui/neumorph-button'
 import { UserMenu } from '@/components/ui/UserMenu'
-import { Settings } from 'lucide-react'
+import { List, Option, OptionIcon, Settings } from 'lucide-react'
 import React from 'react'
 import GenMode from './GenMode'
 
@@ -13,11 +13,11 @@ export default function Header() {
 						<span className="text-sm font-semibold">NeuroCare</span>
 					</div>
 					<nav className="flex items-center gap-3 text-sm">
-						<a href="/dashboard" className="text-muted-foreground hover:text-foreground">Home</a>
+					{/*	<a href="/dashboard" className="text-muted-foreground hover:text-foreground">Home</a>
 						<a href="/dashboard/caree" className="text-muted-foreground hover:text-foreground">Caree</a>
-                       <GenMode sideOffset={8}  side='bottom' align='end' />
+                    */}   <GenMode sideOffset={8}  side='bottom' align='end' />
 					   <NeumorphButton size={'iconSm'} >
-                        <Settings className='size-5' />
+                        <List className='size-5' />
                        </NeumorphButton>
                        <UserMenu sideOffset={8}  side='bottom' align='end'>
 <span tabIndex={-1} className="flex ml-1 relative justify-center items-center box-border overflow-hidden align-middle z-0 outline-solid outline-transparent data-[focus-visible=true]:z-10 data-[focus-visible=true]:outline-2 data-[focus-visible=true]:outline-focus data-[focus-visible=true]:outline-offset-2 w-10 h-10 text-tiny bg-default text-default-foreground rounded-full ring-2 ring-offset-2 ring-offset-background dark:ring-offset-background-dark ring-gray-400">

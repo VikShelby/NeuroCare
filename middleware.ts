@@ -20,7 +20,7 @@ export async function middleware(req: NextRequest) {
   const isAuth = !!token;
   const profileCompleted = (token as unknown as { profileCompleted?: boolean })?.profileCompleted || false;
   const onboardCookie = req.cookies.get("onboard")?.value;
-
+  console.log("Middleware:", { isAuth, profileCompleted, onboardCookie, pathname });
   // If authenticated and visiting an auth page, redirect appropriately
   if (isAuth && AUTH_PAGES.some(p => pathname === p || pathname.startsWith(p + "/"))) {
     if (profileCompleted) {

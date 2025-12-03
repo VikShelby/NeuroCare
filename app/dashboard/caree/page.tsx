@@ -253,7 +253,7 @@ const BottomControls = React.memo(
               y: 10,
               transition: { duration: 0.1 },
             }}
-            className="fixed bottom-60 left-1/2 z-40 -translate-x-1/2 h-24 w-24 flex items-center justify-center"
+            className="fixed bottom-60 xl:bottom-20 left-1/2 z-40 -translate-x-1/2 h-24 w-24 flex items-center justify-center"
           >
             <motion.div
               layoutId="voice-orb"
@@ -486,6 +486,22 @@ export default  function CareeDashboard() {
         }
       }
     }, [])
+
+    // Listen for global audio shutdown requests (e.g., when Express Speech starts)
+    useEffect(() => {
+      const handler = () => {
+        try {
+          conversation.endSession()
+        } catch {}
+        setAgentState("disconnected")
+        if (mediaStreamRef.current) {
+          mediaStreamRef.current.getTracks().forEach((t) => t.stop())
+          mediaStreamRef.current = null
+        }
+      }
+      window.addEventListener('audio-shutdown', handler as EventListener)
+      return () => window.removeEventListener('audio-shutdown', handler as EventListener)
+    }, [conversation])
   
     const isCallActive = agentState === "connected"
     const isTransitioning =
@@ -538,7 +554,7 @@ export default  function CareeDashboard() {
       setHasLesson(true)
     } catch { setGenLoading(false) }
   }
-
+  useEffect(() => {console.log(messages)} , [messages])
   // If Expression & Speech Support mode is selected, render the realtime transcriber experience
   if (mode === "expression-speech-support") return <ExpressSpeach />
   // AAC Communication mode
@@ -613,7 +629,7 @@ export default  function CareeDashboard() {
           >
             {isCallActive && (
               <TranscriberTranscript
-                transcript={messages.map((m) => m.content).join("\n\n")}
+                transcript={messages}
                 error={errorMessage ?? ""}
                 isPartial={true}
                 isConnected={agentState === "connected"}
@@ -691,18 +707,14 @@ const TranscriberTranscript = React.memo(
     isPartial,
     isConnected,
   }: {
-    transcript: string
+    transcript: ChatMessage[]
     error: string
     isPartial?: boolean
     isConnected: boolean
   }) => {
-    const characters = useMemo(() => transcript.split(""), [transcript])
-    const previousNumChars = useDebounce(
-      usePrevious(characters.length) || 0,
-      100
-    )
     const scrollRef = useRef<HTMLDivElement>(null)
     const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+    const [previousTranscriptLength, setPreviousTranscriptLength] = useState(0)
 
     // Auto-scroll to bottom when connected and text is updating
     useEffect(() => {
@@ -723,47 +735,52 @@ const TranscriberTranscript = React.memo(
       }
     }, [transcript, isConnected])
 
+    useEffect(() => {
+      setPreviousTranscriptLength(transcript.length)
+    }, [transcript.length])
+
     return (
       <div className="absolute inset-0 flex flex-col">
         <div ref={scrollRef} className="flex-1 overflow-auto">
-          <div
-            className={cn(
-              "min-h-[50%] w-full px-12 py-8",
-              isConnected && "absolute bottom-16"
-            )}
-          >
-            <div
-              className={cn(
-                "text-foreground/90 w-full text-xl leading-relaxed font-light",
-                error && "text-red-500",
-                isPartial && !error && "text-foreground/60"
-              )}
-            >
-              {characters.map((char, index) => {
-                const delay =
-                  index >= previousNumChars
-                    ? (index - previousNumChars + 1) * 0.012
-                    : 0
-                return (
-                  <TranscriptCharacter key={index} char={char} delay={delay} />
-                )
-              })}
-            </div>
+          <div className="w-full px-12 py-8 space-y-6">
+            {transcript.map((message, msgIndex) => {
+              const characters = message.content.split("")
+              const isNewMessage = msgIndex >= previousTranscriptLength - 1
+              
+              return (
+                <div
+                  key={msgIndex}
+                  className={cn(
+                    "flex w-full",
+                    message.role === "user" ? "justify-end" : "justify-start"
+                  )}
+                >
+                  <div
+                    className={cn(
+                      "max-w-[70%] text-xl leading-relaxed font-light",
+                      message.role === "user" 
+                        ? "text-foreground/90 text-right" 
+                        : "text-foreground/90 text-left",
+                      error && "text-red-500",
+                      isPartial && !error && "text-foreground/60"
+                    )}
+                  >
+                    {characters.map((char, charIndex) => {
+                      const delay = isNewMessage ? charIndex * 0.012 : 0
+                      return (
+                        <TranscriptCharacter 
+                          key={`${msgIndex}-${charIndex}`} 
+                          char={char} 
+                          delay={delay} 
+                        />
+                      )
+                    })}
+                  </div>
+                </div>
+              )
+            })}
           </div>
         </div>
-        {transcript && !error && !isPartial && (
-          <Button
-            variant="ghost"
-            size="icon"
-            className="absolute top-4 right-4 h-8 w-8 opacity-0 transition-opacity hover:opacity-60"
-            onClick={() => {
-              navigator.clipboard.writeText(transcript)
-            }}
-            aria-label="Copy transcript"
-          >
-            <Copy className="h-4 w-4" />
-          </Button>
-        )}
       </div>
     )
   }

@@ -25,6 +25,7 @@ import { Message, MessageContent } from "@/components/ui/message"
 import { Response } from "@/components/ui/response"
 import { Orb } from "@/components/ui/orb"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { Spinner } from "@/components/ui/spinner"
 
 
 type SystemMessageType = "initial" | "connecting" | "connected" | "error"
@@ -250,7 +251,7 @@ const BottomControls = React.memo(
               y: 10,
               transition: { duration: 0.1 },
             }}
-            className="fixed bottom-60 left-1/2 z-40 -translate-x-1/2 h-24 w-24 flex items-center justify-center"
+            className="fixed bottom-60 xl:bottom-20 left-1/2 z-40 -translate-x-1/2 h-24 w-24 flex items-center justify-center"
           >
             <motion.div
               layoutId="voice-orb"
@@ -375,11 +376,27 @@ export default  function SocialCommunication() {
       let cancelled = false
       const run = async () => {
         setLessonLoading(true)
+        // Broadcast lesson loading state
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(
+            new CustomEvent('lesson-loading-state', {
+              detail: { loading: true }
+            })
+          )
+        }
         try {
           const res = await fetch('/api/lessons/current', { method: 'GET' })
           const data = await res.json().catch(() => ({}))
           if (!cancelled && data?.lesson) {
             setLesson(data.lesson)
+            // Fetch latest progress snapshot and merge into lesson
+            try {
+              const progRes = await fetch(`/api/lessons/progress?lessonId=${data.lesson._id}`)
+              const progData = await progRes.json().catch(() => ({}))
+              if (progData?.progress) {
+                setLesson((prev: any) => prev ? { ...prev, progress: progData.progress } : prev)
+              }
+            } catch {}
             // Resume logic: set dynamic variables for progress
             try {
               const parsed = typeof data.lesson.content === 'string' ? JSON.parse(data.lesson.content) : (data.lesson.content || {})
@@ -398,7 +415,17 @@ export default  function SocialCommunication() {
         } catch (err) {
           console.error('[lessons/current] fetch error', err)
         } finally {
-          if (!cancelled) setLessonLoading(false)
+          if (!cancelled) {
+            setLessonLoading(false)
+            // Broadcast lesson loading complete
+            if (typeof window !== 'undefined') {
+              window.dispatchEvent(
+                new CustomEvent('lesson-loading-state', {
+                  detail: { loading: false }
+                })
+              )
+            }
+          }
         }
       }
       run()
@@ -435,6 +462,10 @@ export default  function SocialCommunication() {
               const idxRaw = stepMatch[1] ?? stepMatch[2]
               const idx = idxRaw ? parseInt(idxRaw, 10) - 1 : NaN
               if (!Number.isNaN(idx) && idx >= 0) sendProgress('step-start', idx)
+            }
+            // Heuristic: if the assistant mentions completion, mark current step complete
+            if (/complete|finished|done/i.test(content) && message.source !== 'user') {
+              sendProgress('step-complete')
             }
           } catch {}
         }
@@ -589,6 +620,22 @@ export default  function SocialCommunication() {
         }
       }
     }, [])
+
+    // Listen for global audio shutdown requests (e.g., when Express Speech starts)
+    useEffect(() => {
+      const handler = () => {
+        try {
+          conversation.endSession()
+        } catch {}
+        setAgentState("disconnected")
+        if (mediaStreamRef.current) {
+          mediaStreamRef.current.getTracks().forEach((t) => t.stop())
+          mediaStreamRef.current = null
+        }
+      }
+      window.addEventListener('audio-shutdown', handler as EventListener)
+      return () => window.removeEventListener('audio-shutdown', handler as EventListener)
+    }, [conversation])
   
     const isCallActive = agentState === "connected"
     const isTransitioning =
@@ -654,8 +701,8 @@ export default  function SocialCommunication() {
   // Loading state for lesson before coach starts
   if (mode === 'social-communication-coach' && lessonLoading && !lesson) {
     return (
-      <div className="flex h-full w-full items-center justify-center">
-        <div className="text-sm text-muted-foreground">Loading lesson...</div>
+      <div className="flex h-[80vh] w-full items-center justify-center">
+       <Spinner/>
       </div>
     )
   }
@@ -711,13 +758,10 @@ export default  function SocialCommunication() {
           >
             {isCallActive && (
               <TranscriberTranscript
-                transcript={messages.map((m) => m.content).join("\n\n")}
+                transcript={messages}
                 error={errorMessage ?? ""}
                 isPartial={true}
                 isConnected={agentState === "connected"}
-                onPlay={() => sendProgress('resume')}
-                onPause={() => sendProgress('pause')}
-                onEnded={() => sendProgress('voice-end')}
               />
             )}
           </div>
@@ -781,6 +825,22 @@ export default  function SocialCommunication() {
         />
 
       </div>
+      {lesson && (
+        <div className="absolute top-4 right-4 flex items-center gap-2">
+          <Badge variant="outline">
+            {(() => {
+              let stepsCount = 0
+              try {
+                const parsed = typeof lesson.content === 'string' ? JSON.parse(lesson.content) : (lesson.content || {})
+                stepsCount = Array.isArray(parsed?.steps) ? parsed.steps.length : 0
+              } catch {}
+              const currentIdx = lesson.progress?.currentStepIndex ?? 0
+              const percent = lesson.progress?.percent ?? 0
+              return `Step ${Math.min(currentIdx + 1, Math.max(1, stepsCount))}/${Math.max(1, stepsCount)} • ${percent}%`
+            })()}
+          </Badge>
+        </div>
+      )}
     </div>
   );
 }
@@ -791,25 +851,15 @@ const TranscriberTranscript = React.memo(
     error,
     isPartial,
     isConnected,
-    onPlay,
-    onPause,
-    onEnded,
   }: {
-    transcript: string
+    transcript: ChatMessage[]
     error: string
     isPartial?: boolean
     isConnected: boolean
-    onPlay?: () => void
-    onPause?: () => void
-    onEnded?: () => void
   }) => {
-    const characters = useMemo(() => transcript.split(""), [transcript])
-    const previousNumChars = useDebounce(
-      usePrevious(characters.length) || 0,
-      100
-    )
     const scrollRef = useRef<HTMLDivElement>(null)
     const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+    const [previousTranscriptLength, setPreviousTranscriptLength] = useState(0)
 
     // Auto-scroll to bottom when connected and text is updating
     useEffect(() => {
@@ -830,47 +880,52 @@ const TranscriberTranscript = React.memo(
       }
     }, [transcript, isConnected])
 
+    useEffect(() => {
+      setPreviousTranscriptLength(transcript.length)
+    }, [transcript.length])
+
     return (
       <div className="absolute inset-0 flex flex-col">
-        <div ref={scrollRef} className="flex-1 overflow-auto" onPlay={onPlay as any} onPause={onPause as any} onEnded={onEnded as any}>
-          <div
-            className={cn(
-              "min-h-[50%] w-full px-12 py-8",
-              isConnected && "absolute bottom-16"
-            )}
-          >
-            <div
-              className={cn(
-                "text-foreground/90 w-full text-xl leading-relaxed font-light",
-                error && "text-red-500",
-                isPartial && !error && "text-foreground/60"
-              )}
-            >
-              {characters.map((char, index) => {
-                const delay =
-                  index >= previousNumChars
-                    ? (index - previousNumChars + 1) * 0.012
-                    : 0
-                return (
-                  <TranscriptCharacter key={index} char={char} delay={delay} />
-                )
-              })}
-            </div>
+        <div ref={scrollRef} className="flex-1 overflow-auto">
+          <div className="w-full px-12 py-8 space-y-6">
+            {transcript.map((message, msgIndex) => {
+              const characters = message.content.split("")
+              const isNewMessage = msgIndex >= previousTranscriptLength - 1
+              
+              return (
+                <div
+                  key={msgIndex}
+                  className={cn(
+                    "flex w-full",
+                    message.role === "user" ? "justify-end" : "justify-start"
+                  )}
+                >
+                  <div
+                    className={cn(
+                      "max-w-[70%] text-xl leading-relaxed font-light",
+                      message.role === "user" 
+                        ? "text-foreground/90 text-right" 
+                        : "text-foreground/90 text-left",
+                      error && "text-red-500",
+                      isPartial && !error && "text-foreground/60"
+                    )}
+                  >
+                    {characters.map((char, charIndex) => {
+                      const delay = isNewMessage ? charIndex * 0.012 : 0
+                      return (
+                        <TranscriptCharacter 
+                          key={`${msgIndex}-${charIndex}`} 
+                          char={char} 
+                          delay={delay} 
+                        />
+                      )
+                    })}
+                  </div>
+                </div>
+              )
+            })}
           </div>
         </div>
-        {transcript && !error && !isPartial && (
-          <Button
-            variant="ghost"
-            size="icon"
-            className="absolute top-4 right-4 h-8 w-8 opacity-0 transition-opacity hover:opacity-60"
-            onClick={() => {
-              navigator.clipboard.writeText(transcript)
-            }}
-            aria-label="Copy transcript"
-          >
-            <Copy className="h-4 w-4" />
-          </Button>
-        )}
       </div>
     )
   }
