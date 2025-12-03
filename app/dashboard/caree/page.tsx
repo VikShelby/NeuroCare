@@ -28,6 +28,9 @@ import { Message, MessageContent } from "@/components/ui/message"
 import { Response } from "@/components/ui/response"
 import { Orb } from "@/components/ui/orb"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { SortableList, SortableListItem, Item } from "@/components/ui/sortable-list"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { BookOpen } from "lucide-react"
 
 
 type SystemMessageType = "initial" | "connecting" | "connected" | "error"
@@ -531,15 +534,19 @@ export default  function CareeDashboard() {
     
   // When social coach mode, ensure a lesson exists or prompt to generate
   const [hasLesson, setHasLesson] = useState<boolean | null>(null)
+  const [allLessons, setAllLessons] = useState<any[]>([])
   const [genLoading, setGenLoading] = useState(false)
+  const [showLessonSelector, setShowLessonSelector] = useState(false)
+  
   useEffect(() => {
     const checkLessons = async () => {
       try {
         const res = await fetch("/api/lessons", { method: "GET" })
         if (!res.ok) { setHasLesson(false); return }
         const data = await res.json().catch(() => ({}))
-        const count = Array.isArray(data.lessons) ? data.lessons.length : 0
-        setHasLesson(count > 0)
+        const lessons = Array.isArray(data.lessons) ? data.lessons : []
+        setAllLessons(lessons)
+        setHasLesson(lessons.length > 0)
       } catch { setHasLesson(false) }
     }
     if (mode === "social-communication-coach") checkLessons()
@@ -551,8 +558,28 @@ export default  function CareeDashboard() {
       const res = await fetch("/api/lessons", { method: "POST" })
       setGenLoading(false)
       if (!res.ok) return
-      setHasLesson(true)
+      // Refresh lessons list
+      const listRes = await fetch("/api/lessons", { method: "GET" })
+      const data = await listRes.json().catch(() => ({}))
+      const lessons = Array.isArray(data.lessons) ? data.lessons : []
+      setAllLessons(lessons)
+      setHasLesson(lessons.length > 0)
     } catch { setGenLoading(false) }
+  }
+
+  const handleSelectLesson = async (lessonId: string) => {
+    try {
+      await fetch("/api/lessons/set-current", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ lessonId }),
+      })
+      setShowLessonSelector(false)
+      // Reload to pick up new lesson
+      window.location.reload()
+    } catch (e) {
+      console.error("Failed to set current lesson:", e)
+    }
   }
   useEffect(() => {console.log(messages)} , [messages])
   // If Expression & Speech Support mode is selected, render the realtime transcriber experience
@@ -574,7 +601,67 @@ export default  function CareeDashboard() {
       )
     }
     if (hasLesson === true) {
-      return <SocialCommunication />
+      return (
+        <>
+          <SocialCommunication />
+          <Button
+            onClick={() => setShowLessonSelector(true)}
+            className="fixed top-4 left-4 z-50"
+            variant="outline"
+            size="sm"
+          >
+            <BookOpen className="h-4 w-4 mr-2" />
+            Change Lesson
+          </Button>
+          <Dialog open={showLessonSelector} onOpenChange={setShowLessonSelector}>
+            <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Select a Lesson</DialogTitle>
+                <DialogDescription>
+                  Choose a lesson to practice or generate a new one
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <SortableList
+                  items={allLessons.map((lesson: any, idx: number) => ({
+                    id: idx,
+                    text: lesson.title || "Untitled Lesson",
+                    description: lesson.summary || "",
+                    checked: false,
+                  }))}
+                  setItems={() => {}}
+                  onCompleteItem={() => {}}
+                  renderItem={(item, order, onComplete, onRemove) => (
+                    <div key={item.id} className="mb-2">
+                      <button
+                        onClick={() => {
+                          const lesson = allLessons[item.id]
+                          if (lesson?._id) handleSelectLesson(lesson._id)
+                        }}
+                        className="w-full text-left"
+                      >
+                        <SortableListItem
+                          item={item}
+                          order={order}
+                          onCompleteItem={onComplete}
+                          onRemoveItem={onRemove}
+                          handleDrag={() => {}}
+                          className="cursor-pointer hover:opacity-80 transition-opacity"
+                        />
+                      </button>
+                    </div>
+                  )}
+                />
+                <div className="pt-4 border-t">
+                  <Button onClick={handleGenerateLesson} disabled={genLoading} className="w-full">
+                    {genLoading ? "Generating..." : "Generate New Lesson"}
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </>
+      )
     }
   }
 

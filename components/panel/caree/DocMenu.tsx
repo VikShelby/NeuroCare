@@ -63,10 +63,10 @@ const Icons = {
 
 const DATA = {
   navbar: [
-    { href: "#", icon: HomeIcon, label: "Home" },
-    { href: "#", icon: Repeat, label: "Routine" },
-    { href: "#", icon: BookIcon, label: "Lessons" },
-    { href: "#", icon: User, label: "Profile" },
+    { href: "/dashboard/caree", icon: HomeIcon, label: "Home" },
+    { href: "/dashboard/caree/routines", icon: Repeat, label: "Routine" },
+    { href: "/dashboard/caree/lessons", icon: BookIcon, label: "Lessons" },
+    { href: "/dashboard/caree/profile", icon: User, label: "Profile" },
   ],
   }
 
@@ -100,7 +100,8 @@ export default function DockMenu() {
   
 
   return (
-        <TooltipProvider>
+    <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50">
+      <TooltipProvider>
         <Dock className={agentConnected ? "hidden" : ""} direction="middle">
           {DATA.navbar.map((item) => (
             <DockIcon key={item.label}>
@@ -125,8 +126,9 @@ export default function DockMenu() {
           ))}
          {/* <Separator orientation="vertical" className="h-full" />*/}
           
-        </Dock></TooltipProvider>
-  
+        </Dock>
+      </TooltipProvider>
+    </div>
   )
 }
 

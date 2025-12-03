@@ -433,11 +433,14 @@ export default  function SocialCommunication() {
     }, [mode])
 
     
-
+   console.log(session , lesson)
     const conversation = useConversation({
       dynamicVariables: {
         user_name: userName,
-          ...lessonDynamics,
+        userId: (session?.user as any)?.id || "", 
+        lessonId: lesson?._id || "",
+        currentStepIndex: lesson?.progress?.currentStepIndex ?? 0,
+        ...lessonDynamics,
       },
     
       onConnect: () => {
@@ -455,19 +458,6 @@ export default  function SocialCommunication() {
             content: message.message,
           }
           setMessages(prev => [...prev, newMessage])
-          try {
-            const content = message.message.trim()
-            const stepMatch = content.match(/^(\d+)[\).]\s|^Step\s*(\d+)/i)
-            if (stepMatch) {
-              const idxRaw = stepMatch[1] ?? stepMatch[2]
-              const idx = idxRaw ? parseInt(idxRaw, 10) - 1 : NaN
-              if (!Number.isNaN(idx) && idx >= 0) sendProgress('step-start', idx)
-            }
-            // Heuristic: if the assistant mentions completion, mark current step complete
-            if (/complete|finished|done/i.test(content) && message.source !== 'user') {
-              sendProgress('step-complete')
-            }
-          } catch {}
         }
       },
       onError: (error: any) => {
@@ -651,33 +641,19 @@ export default  function SocialCommunication() {
       return Math.min(1.0, Math.pow(rawValue, 0.5) * 2.5)
     }, [conversation])
 
-    // Progress API helper (throttled)
-    const lastProgressSentRef = useRef<number>(0)
-    const sendProgress = useCallback(async (action: string, stepIndex?: number) => {
+    // Session tracking only (step completion now handled by agent webhook)
+    const sendProgress = useCallback(async (action: 'voice-start' | 'voice-end') => {
       if (!lesson?._id) return
-      const now = Date.now()
-      if (action === 'voice-end' || action === 'step-complete') {
-        lastProgressSentRef.current = 0
-      } else {
-        if (now - lastProgressSentRef.current < 500) return
-        lastProgressSentRef.current = now
-      }
       try {
         const parsed = typeof lesson.content === 'string' ? JSON.parse(lesson.content) : (lesson.content || {})
         const totalSteps = Array.isArray(parsed?.steps) ? parsed.steps.length : 0
-        const res = await fetch('/api/lessons/progress', {
+        await fetch('/api/lessons/progress', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ lessonId: lesson._id, action, stepIndex, totalSteps }),
+          body: JSON.stringify({ lessonId: lesson._id, action, totalSteps }),
         })
-        if (res.ok) {
-          const data = await res.json().catch(() => null)
-          if (data?.progress) {
-            setLesson(prev => prev ? ({ ...prev, progress: data.progress }) : prev)
-          }
-        }
       } catch (e) {
-        console.error('[lessons/progress] send error', e)
+        console.error('[lessons/progress] session tracking error', e)
       }
     }, [lesson])
 
@@ -692,6 +668,26 @@ export default  function SocialCommunication() {
           )
         }
       }, [agentState])
+
+      // Poll for progress updates while connected (agent webhook updates via external call)
+      useEffect(() => {
+        if (agentState !== 'connected' || !lesson?._id) return
+        
+        const pollProgress = async () => {
+          try {
+            const res = await fetch(`/api/lessons/progress?lessonId=${lesson._id}`)
+            const data = await res.json().catch(() => ({}))
+            if (data?.progress) {
+              setLesson(prev => prev ? ({ ...prev, progress: data.progress }) : prev)
+            }
+          } catch (e) {
+            console.error('[poll progress] error', e)
+          }
+        }
+
+        const interval = setInterval(pollProgress, 3000) // Poll every 3 seconds
+        return () => clearInterval(interval)
+      }, [agentState, lesson?._id])
     
   // If Expression & Speech Support mode is selected, render the realtime transcriber experience
   if (mode === "expression-speech-support") {

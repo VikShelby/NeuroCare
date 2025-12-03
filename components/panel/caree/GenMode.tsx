@@ -16,6 +16,7 @@ import {
 import NeumorphButton from '@/components/ui/neumorph-button';
 import { useGenMode } from '@/components/panel/caree/GenModeContext';
 import Image from 'next/image';
+import { usePathname } from 'next/navigation';
 
 
 interface RadixDropdownMenuDemoProps {
@@ -32,6 +33,12 @@ const GenMode = ({
   
 }: RadixDropdownMenuDemoProps) => {
   const { mode, setMode } = useGenMode()
+  const pathname = usePathname()
+
+  // Only show on /dashboard/caree route (not on subroutes)
+  if (pathname !== '/dashboard/caree') {
+    return null
+  }
 
   const labelFor = (m: string) => {
     switch (m) {

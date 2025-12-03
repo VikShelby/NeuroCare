@@ -26,6 +26,7 @@ export async function POST(req: NextRequest) {
     const session = await getServerSession(authOptions as any)
     if (!session?.user?.email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     const body = await req.json().catch(()=>({}))
+  console.log(session , body)
     const { title, description, time, frequency, importance, associatedActivities, flexibility, notes } = body
     if (!title || typeof title !== 'string') return NextResponse.json({ error: 'Title required' }, { status: 400 })
     await connectToDatabase()

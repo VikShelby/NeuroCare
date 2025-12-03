@@ -11,6 +11,7 @@ export interface IRoutine {
   notes?: string
   caregiverId: Types.ObjectId
   careeId?: Types.ObjectId
+  completedDates?: Date[]
 }
 
 const RoutineSchema = new Schema<IRoutine>({
@@ -24,6 +25,7 @@ const RoutineSchema = new Schema<IRoutine>({
   notes: { type: String },
   caregiverId: { type: Schema.Types.ObjectId, ref: "User", required: true },
   careeId: { type: Schema.Types.ObjectId, ref: "User" },
+  completedDates: [{ type: Date }],
 }, { timestamps: true })
 
 const Routine: Model<IRoutine> = models.Routine || mongoose.model<IRoutine>("Routine", RoutineSchema)

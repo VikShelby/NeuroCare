@@ -71,7 +71,20 @@ export default function OnboardingProfilePage() {
     }
     // Note: We persist profile details after account creation in register flow
     if (step < steps.length - 1) next();
-    else router.push("/onboarding/qa");
+    else {
+      // Caregivers skip autism profile questions and go directly to register
+      if (role === "caregiver") {
+        // Set onboard cookie for caregivers to allow register access
+        if (typeof window !== "undefined") {
+          try {
+            document.cookie = `onboard=1; path=/; max-age=1800`; // 30 minutes
+          } catch {}
+        }
+        router.push("/register");
+      } else {
+        router.push("/onboarding/qa");
+      }
+    }
   };
 
   if (!role) {
