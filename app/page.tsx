@@ -1,10 +1,5 @@
-import { IntroDisclosureDemo } from "@/components/home";
-
+import { redirect } from "next/navigation";
 
 export default function Home() {
-  return (
-    <div className="">
-     <IntroDisclosureDemo />
-    </div>
-  );
+  redirect("/onboarding");
 }
