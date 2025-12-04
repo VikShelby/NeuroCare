@@ -17,7 +17,7 @@ export async function connectToDatabase() {
   if (!MONGODB_URI) {
     throw new Error("MONGODB_URI is not set in environment variables");
   }
-
+  console.log('fd')
   if (!cached!.promise) {
     cached!.promise = mongoose
       .connect(MONGODB_URI, {
