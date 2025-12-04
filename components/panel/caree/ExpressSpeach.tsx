@@ -192,12 +192,6 @@ const BottomControls = React.memo(
         )}
       </AnimatePresence>
     )
-  },
-  (prev, next) => {
-    if (prev.isConnected !== next.isConnected) return false
-    if (prev.hasError !== next.hasError) return false
-    if (prev.isMac !== next.isMac) return false
-    return true
   }
 )
 BottomControls.displayName = "BottomControls"
