@@ -9,7 +9,8 @@ import {
   BookOpen, 
   Users, 
   Settings,
-  LogOut
+  LogOut,
+  Eye
 } from "lucide-react"
 
 import { cn } from "@/lib/utils"
@@ -29,6 +30,7 @@ const NAV_ITEMS = [
   { href: "/dashboard/caregiver/routines", icon: Calendar, label: "Routines" },
   { href: "/dashboard/caregiver/lessons", icon: BookOpen, label: "Lessons" },
   { href: "/dashboard/caregiver/carees", icon: Users, label: "Carees" },
+  { href: "https://autism-simulator-b3ju.vercel.app/", icon: Eye, label: "Autism Simulation", external: true },
 ]
 
 export default function CaregiverDockMenu() {
@@ -40,14 +42,18 @@ export default function CaregiverDockMenu() {
         <Dock direction="middle" className="bg-white/80 border-black/10 shadow-lg shadow-black/5">
           {NAV_ITEMS.map((item) => {
             const isActive = pathname === item.href || 
-              (item.href !== "/dashboard/caregiver" && pathname.startsWith(item.href))
+              (item.href !== "/dashboard/caregiver" && !item.external && pathname.startsWith(item.href))
+            
+            const linkProps = item.external 
+              ? { href: item.href, target: "_blank", rel: "noopener noreferrer" }
+              : { href: item.href }
             
             return (
               <DockIcon key={item.label}>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Link
-                      href={item.href}
+                      {...linkProps}
                       aria-label={item.label}
                       className={cn(
                         buttonVariants({ variant: "ghost", size: "icon" }),
