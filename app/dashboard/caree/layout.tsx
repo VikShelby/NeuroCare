@@ -3,13 +3,12 @@ import Header from "@/components/panel/caree/header";
 
 export default function CareeLayout({ children }: { children: React.ReactNode }) {
 	return (
-		<div className="min-h-[90vh] max-h-[90vh] bg-background">
+		<div className="min-h-screen ">
 			<Header />
-			<main className="mx-auto  max-w-6xl px-4 py-8">
+			<main className="mx-auto max-w-3xl md:px-4 md:h-auto h-[75hv] md:pb-32 pt-6">
 				{children}
 			</main>
-            <DockMenu />
-			
+			<DockMenu />
 		</div>
 	);
 }

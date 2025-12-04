@@ -6,8 +6,9 @@ import { LogoutButton } from "@/components/ui/logout-button";
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions);
   if (!session) redirect("/login");
-  if (!session.user?.profileCompleted) redirect("/onboarding/role");
-  const role = (session.user as any).role as undefined | "caree" | "caregiver";
+  const user = session.user as any;
+  if (!user?.profileCompleted) redirect("/onboarding/role");
+  const role = user?.role as undefined | "caree" | "caregiver";
   if (role === "caree") redirect("/dashboard/caree");
   if (role === "caregiver") redirect("/dashboard/caregiver");
   return (

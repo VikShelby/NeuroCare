@@ -130,8 +130,8 @@ Constraints: Trauma-informed, supportive tone; accessible, concise steps; includ
 }
 
 export async function GET() {
-  const session = await getServerSession(authOptions);
-  if (!session || !(session.user as any)?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const session: any = await getServerSession(authOptions);
+  if (!session || !session.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   await connectToDatabase();
   const userId = (session.user as any).id;
   const lessons = await Lesson.find({ userId }).sort({ createdAt: -1 }).lean();
@@ -139,8 +139,8 @@ export async function GET() {
 }
 
 export async function POST() {
-  const session = await getServerSession(authOptions);
-  if (!session || !(session.user as any)?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const session: any = await getServerSession(authOptions);
+  if (!session || !session.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   await connectToDatabase();
   const userId = (session.user as any).id;
   const pref = await Preferences.findOne({ userId }).lean();

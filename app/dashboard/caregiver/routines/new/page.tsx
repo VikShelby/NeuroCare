@@ -1,12 +1,11 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
-import { Separator } from "@/components/ui/separator"
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select"
+import { CheckCircle2 } from "lucide-react"
 
 type Caree = { _id: string; name?: string; email?: string }
 
@@ -77,75 +76,145 @@ export default function NewRoutinePage() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
-      <h1 className="text-xl font-semibold">Create Routine</h1>
-      <Card className="p-4 space-y-4">
-        <div>
-          <div className="text-sm font-medium">Title</div>
-          <Input value={title} onChange={e=>setTitle(e.target.value)} placeholder="Morning Routine" />
-        </div>
-        <div>
-          <div className="text-sm font-medium">Description</div>
-          <Textarea value={description} onChange={e=>setDescription(e.target.value)} placeholder="What this routine involves" />
-        </div>
-        <Separator />
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div>
-            <div className="text-sm font-medium">Date / Time</div>
-            <div className="flex gap-2">
-              <Input type="date" value={date} onChange={e=>setDate(e.target.value)} min={new Date().toISOString().slice(0,10)} />
-              <Input type="time" value={timeOfDay} onChange={e=>setTimeOfDay(e.target.value)} />
+    <div className="pb-24">
+      <div className="max-w-2xl mx-auto px-6 py-8">
+        <h1 className="text-2xl font-light text-black mb-8">Create Routine</h1>
+        
+        <div className="space-y-8">
+          <div className="space-y-2">
+            <label className="text-xs uppercase tracking-wider text-black/50">Title</label>
+            <Input 
+              value={title} 
+              onChange={e=>setTitle(e.target.value)} 
+              placeholder="Morning Routine" 
+              className="border-black/10 focus:border-black"
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <label className="text-xs uppercase tracking-wider text-black/50">Description</label>
+            <Textarea 
+              value={description} 
+              onChange={e=>setDescription(e.target.value)} 
+              placeholder="What this routine involves" 
+              className="border-black/10 focus:border-black min-h-[100px]"
+            />
+          </div>
+          
+          <div className="h-px bg-black/10" />
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <label className="text-xs uppercase tracking-wider text-black/50">Date</label>
+              <Input 
+                type="date" 
+                value={date} 
+                onChange={e=>setDate(e.target.value)} 
+                min={new Date().toISOString().slice(0,10)} 
+                className="border-black/10 focus:border-black"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-xs uppercase tracking-wider text-black/50">Time</label>
+              <Input 
+                type="time" 
+                value={timeOfDay} 
+                onChange={e=>setTimeOfDay(e.target.value)} 
+                className="border-black/10 focus:border-black"
+              />
             </div>
           </div>
-          <div>
-            <div className="text-sm font-medium">Frequency</div>
-            <Input value={frequency} onChange={e=>setFrequency(e.target.value)} placeholder="daily | weekly | weekdays | once" />
+          
+          <div className="space-y-2">
+            <label className="text-xs uppercase tracking-wider text-black/50">Frequency</label>
+            <Input 
+              value={frequency} 
+              onChange={e=>setFrequency(e.target.value)} 
+              placeholder="daily | weekly | weekdays | once" 
+              className="border-black/10 focus:border-black"
+            />
+          </div>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <label className="text-xs uppercase tracking-wider text-black/50">Importance (1–5)</label>
+              <Input 
+                type="number" 
+                min={1} 
+                max={5} 
+                value={importance} 
+                onChange={e=>setImportance(Number(e.target.value))} 
+                className="border-black/10 focus:border-black"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-xs uppercase tracking-wider text-black/50">Flexibility</label>
+              <Input 
+                value={flexibility} 
+                onChange={e=>setFlexibility(e.target.value)} 
+                placeholder="low | medium | high" 
+                className="border-black/10 focus:border-black"
+              />
+            </div>
+          </div>
+          
+          <div className="space-y-2">
+            <label className="text-xs uppercase tracking-wider text-black/50">Associated Activities</label>
+            <Input 
+              value={associatedActivities} 
+              onChange={e=>setAssociatedActivities(e.target.value)} 
+              placeholder="brush teeth, meditation" 
+              className="border-black/10 focus:border-black"
+            />
+            <p className="text-xs text-black/40">Comma-separated list</p>
+          </div>
+          
+          <div className="space-y-2">
+            <label className="text-xs uppercase tracking-wider text-black/50">Notes</label>
+            <Textarea 
+              value={notes} 
+              onChange={e=>setNotes(e.target.value)} 
+              placeholder="Tips or instructions" 
+              className="border-black/10 focus:border-black min-h-[80px]"
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <label className="text-xs uppercase tracking-wider text-black/50">Caree (required)</label>
+            <Select value={careeId} onValueChange={setCareeId}>
+              <SelectTrigger className="w-full border-black/10 focus:border-black">
+                <SelectValue placeholder="Select a caree…" />
+              </SelectTrigger>
+              <SelectContent>
+                {carees.length > 0 && carees.map(c => (
+                  <SelectItem key={c._id} value={c._id}>{c.name || c.email || c._id}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {carees.length === 0 && (
+              <p className="text-xs text-black/40">No carees found. Link carees first.</p>
+            )}
+          </div>
+          
+          <div className="flex items-center gap-4 pt-4">
+            <Button 
+              onClick={onSubmit}
+              className="bg-black text-white hover:bg-black/80 px-8"
+            >
+              Create Routine
+            </Button>
+            {ok && (
+              <div className="flex items-center gap-2 text-sm text-green-600">
+                <CheckCircle2 className="w-4 h-4" /> Created successfully
+              </div>
+            )}
+            {error && (
+              <div className="text-sm text-red-600">{error}</div>
+            )}
           </div>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div>
-            <div className="text-sm font-medium">Importance (1–5)</div>
-            <Input type="number" min={1} max={5} value={importance} onChange={e=>setImportance(Number(e.target.value))} />
-          </div>
-          <div>
-            <div className="text-sm font-medium">Flexibility</div>
-            <Input value={flexibility} onChange={e=>setFlexibility(e.target.value)} placeholder="low | medium | high or a number" />
-          </div>
-        </div>
-        <div>
-          <div className="text-sm font-medium">Associated Activities (comma-separated)</div>
-          <Input value={associatedActivities} onChange={e=>setAssociatedActivities(e.target.value)} placeholder="brush teeth, meditation" />
-        </div>
-        <div>
-          <div className="text-sm font-medium">Notes</div>
-          <Textarea value={notes} onChange={e=>setNotes(e.target.value)} placeholder="Tips or instructions" />
-        </div>
-        <div>
-          <div className="text-sm font-medium">Caree (required)</div>
-          <Select value={careeId} onValueChange={setCareeId}>
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Select a caree…" />
-            </SelectTrigger>
-            <SelectContent>
-              {carees.length > 0 && carees.map(c => (
-                <SelectItem key={c._id} value={c._id}>{c.name || c.email || c._id}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {carees.length === 0 && (
-            <div className="text-xs text-muted-foreground mt-1">No carees found. Link carees first.</div>
-          )}
-        </div>
-        <div className="flex items-center gap-2">
-          <Button onClick={onSubmit}>Create</Button>
-          {ok && <div className="text-sm text-green-600">Created</div>}
-          {error && <div className="text-sm text-red-500">{error}</div>}
-        </div>
-      </Card>
+      </div>
     </div>
   )
-}
-function setTime(arg0: string) {
-    throw new Error("Function not implemented.")
 }
 

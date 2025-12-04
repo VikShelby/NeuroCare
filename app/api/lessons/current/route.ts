@@ -7,8 +7,8 @@ import Lesson from "@/models/Lesson";
 import { z } from "zod";
 
 export async function GET() {
-  const session = await getServerSession(authOptions);
-  if (!session || !(session.user as any)?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const session: any = await getServerSession(authOptions);
+  if (!session || !session.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   await connectToDatabase();
   const userId = (session.user as any).id;
   const pref = await Preferences.findOne({ userId }).lean();
@@ -40,8 +40,8 @@ export async function GET() {
 const activateSchema = z.object({ lessonId: z.string().min(1) });
 
 export async function POST(req: Request) {
-  const session = await getServerSession(authOptions);
-  if (!session || !(session.user as any)?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const session: any = await getServerSession(authOptions);
+  if (!session || !session.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   await connectToDatabase();
   const userId = (session.user as any).id;
   const body = await req.json().catch(() => null);

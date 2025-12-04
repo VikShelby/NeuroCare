@@ -129,7 +129,7 @@ export default function OnboardingProfilePage() {
     return "You're set — continue to tailored questions to complete your onboarding.";
   })()
   return (
-    <div className="max-w-3xl mx-auto py-14">
+    <div className="max-w-3xl mx-auto py-14 px-4 md:px-0">
       <div className=" space-y-3">
         
         <Progress

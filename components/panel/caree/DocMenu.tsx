@@ -102,7 +102,7 @@ export default function DockMenu() {
   return (
     <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50">
       <TooltipProvider>
-        <Dock className={agentConnected ? "hidden" : ""} direction="middle">
+        <Dock className={agentConnected ? "hidden bg-white" : " bg-white"} direction="middle">
           {DATA.navbar.map((item) => (
             <DockIcon key={item.label}>
               <Tooltip>

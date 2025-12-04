@@ -197,7 +197,7 @@ export default function OnboardingQAPage() {
   const progressPercent = Math.round(((step + 1) / steps.length) * 100);
 
   return (
-    <div className="max-w-3xl mx-auto py-14">
+    <div className="max-w-3xl mx-auto py-14 px-4 md:px-0">
           <div className=" space-y-3">
         
         <Progress

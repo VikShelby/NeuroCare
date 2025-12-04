@@ -256,7 +256,7 @@ const BottomControls = React.memo(
               y: 10,
               transition: { duration: 0.1 },
             }}
-            className="fixed bottom-60 xl:bottom-20 left-1/2 z-40 -translate-x-1/2 h-24 w-24 flex items-center justify-center"
+            className="fixed bottom-4 md:bottom-60 xl:bottom-20 left-1/2 z-40 -translate-x-1/2 h-24 w-24 flex items-center justify-center"
           >
             <motion.div
               layoutId="voice-orb"
@@ -829,7 +829,7 @@ const TranscriberTranscript = React.memo(
     return (
       <div className="absolute inset-0 flex flex-col">
         <div ref={scrollRef} className="flex-1 overflow-auto">
-          <div className="w-full px-12 py-8 space-y-6">
+          <div className="w-full md:px-12 md:py-8 space-y-6 p-0">
             {transcript.map((message, msgIndex) => {
               const characters = message.content.split("")
               const isNewMessage = msgIndex >= previousTranscriptLength - 1

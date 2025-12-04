@@ -12,7 +12,7 @@ export const dynamic = 'force-dynamic'
 
 export async function GET() {
   try {
-    const session = await getServerSession(authOptions as any)
+    const session: any = await getServerSession(authOptions as any)
     if (!session || !session.user?.email) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     console.log("[caregiver/carees][GET] session user email:", session)
     await connectToDatabase()
@@ -35,7 +35,7 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions as any)
+    const session: any = await getServerSession(authOptions as any)
     if (!session || !session.user?.email) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     const { email } = await req.json().catch(() => ({}))
     if (!email || typeof email !== 'string') return NextResponse.json({ error: "Missing caree email" }, { status: 400 })

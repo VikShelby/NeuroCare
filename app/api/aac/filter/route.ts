@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
     // Fetch current user's autism profile to condition Gemini
     let autismProfile: any = null
     try {
-      const session = await getServerSession(authOptions as any)
+      const session: any = await getServerSession(authOptions as any)
       if (session?.user?.email) {
         await connectToDatabase()
         const user = await User.findOne({ email: session.user.email }).select("autismProfile role")

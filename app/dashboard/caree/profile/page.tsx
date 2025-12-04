@@ -1,14 +1,24 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import React, { useEffect, useState } from "react"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Skeleton } from "@/components/ui/skeleton"
-import { User, Mail, Calendar, Brain, Activity } from "lucide-react"
-import { GradientHeading } from "@/components/ui/gradient-heading"
+import { motion } from "framer-motion"
+import { 
+  User, 
+  Mail, 
+  Calendar, 
+  Brain, 
+  Activity, 
+  MessageSquare, 
+  Eye,
+  Sparkles,
+  Heart,
+  Users,
+  Zap,
+  ChevronRight,
+  Shield
+} from "lucide-react"
 
 interface UserProfile {
   email: string
@@ -39,6 +49,76 @@ interface UserProfile {
     preferAloneVsOthers?: number
     hardSocialCues?: string[]
   }
+}
+
+const ProfileStat = ({ value, label, color = "blue" }: { value: number | string, label: string, color?: string }) => {
+  const colorClasses = {
+    blue: "from-[#007AFF] to-[#5856D6]",
+    green: "from-[#34C759] to-[#30D158]",
+    orange: "from-[#FF9500] to-[#FF3B30]",
+    purple: "from-[#AF52DE] to-[#5856D6]"
+  }
+  
+  return (
+    <div className="bg-white dark:bg-[#2C2C2E] rounded-2xl p-4 shadow-sm">
+      <div className={`text-2xl font-bold bg-gradient-to-r ${colorClasses[color as keyof typeof colorClasses]} bg-clip-text text-transparent`}>
+        {typeof value === 'number' ? `${value}/5` : value}
+      </div>
+      <div className="text-[13px] text-[#8E8E93] mt-1">{label}</div>
+    </div>
+  )
+}
+
+const ProfileSection = ({ 
+  title, 
+  icon: Icon, 
+  children 
+}: { 
+  title: string
+  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>
+  children: React.ReactNode 
+}) => (
+  <motion.div 
+    initial={{ opacity: 0, y: 10 }}
+    animate={{ opacity: 1, y: 0 }}
+    className="bg-white dark:bg-[#2C2C2E] rounded-2xl shadow-sm overflow-hidden"
+  >
+    <div className="px-5 py-4 border-b border-[#E5E5EA] dark:border-[#3A3A3C]">
+      <div className="flex items-center gap-3">
+        <div className="w-8 h-8 bg-[#F2F2F7] dark:bg-[#3A3A3C] rounded-lg flex items-center justify-center">
+          <Icon className="w-4 h-4 text-[#8E8E93]" />
+        </div>
+        <h2 className="text-[17px] font-semibold text-[#1C1C1E] dark:text-white">{title}</h2>
+      </div>
+    </div>
+    <div className="p-5">
+      {children}
+    </div>
+  </motion.div>
+)
+
+const ProfileRow = ({ label, value, icon: Icon }: { label: string, value: string, icon?: React.ComponentType<React.SVGProps<SVGSVGElement>> }) => (
+  <div className="flex items-center justify-between py-3 border-b border-[#E5E5EA] dark:border-[#3A3A3C] last:border-0">
+    <div className="flex items-center gap-3">
+      {Icon && <Icon className="w-4 h-4 text-[#8E8E93]" />}
+      <span className="text-[15px] text-[#8E8E93]">{label}</span>
+    </div>
+    <span className="text-[15px] text-[#1C1C1E] dark:text-white font-medium">{value}</span>
+  </div>
+)
+
+const Badge = ({ children, variant = "default" }: { children: React.ReactNode, variant?: "default" | "success" | "warning" }) => {
+  const variants = {
+    default: "bg-[#F2F2F7] dark:bg-[#3A3A3C] text-[#1C1C1E] dark:text-white",
+    success: "bg-[#34C759]/10 text-[#34C759]",
+    warning: "bg-[#FF9500]/10 text-[#FF9500]"
+  }
+  
+  return (
+    <span className={`inline-flex px-3 py-1 rounded-full text-[13px] font-medium ${variants[variant]}`}>
+      {children}
+    </span>
+  )
 }
 
 export default function CareeProfilePage() {
@@ -73,11 +153,15 @@ export default function CareeProfilePage() {
 
   if (loading || status === "loading") {
     return (
-      <div className="container mx-auto max-w-4xl py-8 px-4">
-        <Skeleton className="h-12 w-64 mb-8" />
-        <div className="space-y-4">
-          <Skeleton className="h-32 w-full" />
-          <Skeleton className="h-64 w-full" />
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-semibold text-[#1C1C1E] dark:text-white">Profile</h1>
+        </div>
+        <div className="bg-white dark:bg-[#2C2C2E] rounded-2xl p-8 shadow-sm">
+          <div className="flex items-center justify-center gap-3">
+            <div className="w-5 h-5 border-2 border-[#007AFF] border-t-transparent rounded-full animate-spin" />
+            <span className="text-[#8E8E93]">Loading profile...</span>
+          </div>
         </div>
       </div>
     )
@@ -85,16 +169,23 @@ export default function CareeProfilePage() {
 
   if (!profile) {
     return (
-      <div className="container mx-auto max-w-4xl py-8 px-4">
-        <Card>
-          <CardHeader>
-            <CardTitle>Profile Not Found</CardTitle>
-            <CardDescription>Unable to load your profile information.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button onClick={() => router.push("/dashboard")}>Return to Dashboard</Button>
-          </CardContent>
-        </Card>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-semibold text-[#1C1C1E] dark:text-white">Profile</h1>
+        </div>
+        <div className="bg-white dark:bg-[#2C2C2E] rounded-2xl p-12 text-center shadow-sm">
+          <div className="w-16 h-16 bg-[#F2F2F7] dark:bg-[#3A3A3C] rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <User className="w-8 h-8 text-[#8E8E93]" />
+          </div>
+          <h3 className="text-lg font-medium text-[#1C1C1E] dark:text-white mb-2">Profile Not Found</h3>
+          <p className="text-[#8E8E93] text-sm mb-6">Unable to load your profile information</p>
+          <button 
+            onClick={() => router.push("/dashboard/caree")}
+            className="px-6 py-2.5 bg-[#007AFF] text-white rounded-full text-sm font-medium hover:bg-[#0056CC] transition-colors"
+          >
+            Return to Dashboard
+          </button>
+        </div>
       </div>
     )
   }
@@ -102,280 +193,145 @@ export default function CareeProfilePage() {
   const ap = profile.autismProfile
 
   return (
-    <div className="container mx-auto max-w-4xl py-8 px-4">
-      <div className="mb-8">
-        <GradientHeading size="lg" weight="black">
-          Your Profile
-        </GradientHeading>
-        <p className="text-muted-foreground mt-2">
-          View your personal information and autism profile details
-        </p>
-      </div>
-
-      {/* Basic Information */}
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <User className="h-5 w-5" />
-            Basic Information
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <div className="text-sm font-medium text-muted-foreground mb-1">Name</div>
-              <div className="flex items-center gap-2">
-                <User className="h-4 w-4 text-muted-foreground" />
-                <span>{profile.name || "Not provided"}</span>
-              </div>
-            </div>
-            <div>
-              <div className="text-sm font-medium text-muted-foreground mb-1">Email</div>
-              <div className="flex items-center gap-2">
-                <Mail className="h-4 w-4 text-muted-foreground" />
-                <span>{profile.email}</span>
-              </div>
-            </div>
-            {profile.dateOfBirth && (
-              <div>
-                <div className="text-sm font-medium text-muted-foreground mb-1">Date of Birth</div>
-                <div className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4 text-muted-foreground" />
-                  <span>{new Date(profile.dateOfBirth).toLocaleDateString()}</span>
-                </div>
-              </div>
-            )}
-            {profile.pronouns && (
-              <div>
-                <div className="text-sm font-medium text-muted-foreground mb-1">Pronouns</div>
-                <span>{profile.pronouns}</span>
-              </div>
-            )}
-            {profile.gender && (
-              <div>
-                <div className="text-sm font-medium text-muted-foreground mb-1">Gender</div>
-                <span>{profile.gender}</span>
-              </div>
+    <div className="space-y-6">
+      {/* Header Card */}
+      <motion.div 
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="bg-gradient-to-br from-[#007AFF] to-[#5856D6] rounded-2xl p-6 shadow-lg shadow-[#007AFF]/20 mx-6"
+      >
+        <div className="flex items-center gap-4">
+          <div className="w-20 h-20 bg-white/20 backdrop-blur rounded-2xl flex items-center justify-center text-3xl font-bold text-white">
+            {(profile.name || profile.email || "?")[0].toUpperCase()}
+          </div>
+          <div className="flex-1">
+            <h1 className="text-2xl font-bold text-white">{profile.name || "Your Profile"}</h1>
+            <p className="text-white/70 text-sm mt-1">{profile.email}</p>
+            {profile.role && (
+              <span className="inline-flex mt-2 px-3 py-1 bg-white/20 backdrop-blur rounded-full text-white text-xs font-medium">
+                {profile.role}
+              </span>
             )}
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </motion.div>
+
+      {/* Quick Stats */}
+      {ap && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {ap.socialComfort !== undefined && (
+            <ProfileStat value={ap.socialComfort} label="Social Comfort" color="blue" />
+          )}
+          {ap.focusEase !== undefined && (
+            <ProfileStat value={ap.focusEase} label="Focus Ease" color="green" />
+          )}
+          {ap.routineImportance !== undefined && (
+            <ProfileStat value={ap.routineImportance} label="Routine Need" color="purple" />
+          )}
+          {ap.sensorySensitivity !== undefined && (
+            <ProfileStat value={ap.sensorySensitivity} label="Sensory Level" color="orange" />
+          )}
+        </div>
+      )}
+
+      {/* Basic Info */}
+      <ProfileSection title="Basic Information" icon={User}>
+        {profile.name && <ProfileRow label="Name" value={profile.name} icon={User} />}
+        <ProfileRow label="Email" value={profile.email} icon={Mail} />
+        {profile.dateOfBirth && (
+          <ProfileRow 
+            label="Date of Birth" 
+            value={new Date(profile.dateOfBirth).toLocaleDateString()} 
+            icon={Calendar} 
+          />
+        )}
+        {profile.pronouns && <ProfileRow label="Pronouns" value={profile.pronouns} />}
+        {profile.gender && <ProfileRow label="Gender" value={profile.gender} />}
+      </ProfileSection>
 
       {/* Autism Profile */}
       {ap && (
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Brain className="h-5 w-5" />
-              Autism Spectrum Profile
-            </CardTitle>
-            <CardDescription>
-              Information about your diagnosis and support needs
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {/* Diagnosis */}
-            {(ap.diagnosis || ap.formalDiagnosis) && (
-              <div>
-                <div className="text-sm font-semibold mb-2">Diagnosis</div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {ap.diagnosis && (
-                    <div>
-                      <span className="text-xs text-muted-foreground">ASD Level:</span>
-                      <Badge variant="outline" className="ml-2">{ap.diagnosis}</Badge>
-                    </div>
-                  )}
-                  {ap.formalDiagnosis && (
-                    <div>
-                      <span className="text-xs text-muted-foreground">Formal Diagnosis:</span>
-                      <Badge variant="outline" className="ml-2">{ap.formalDiagnosis}</Badge>
-                    </div>
-                  )}
-                </div>
+        <>
+          {/* Diagnosis */}
+          {(ap.diagnosis || ap.formalDiagnosis) && (
+            <ProfileSection title="Diagnosis" icon={Shield}>
+              <div className="flex flex-wrap gap-2">
+                {ap.diagnosis && <Badge>{ap.diagnosis}</Badge>}
+                {ap.formalDiagnosis && <Badge variant="success">{ap.formalDiagnosis}</Badge>}
               </div>
-            )}
+            </ProfileSection>
+          )}
 
-            {/* Emotions & Focus */}
-            {(ap.anxietyFrequency || ap.focusEase !== undefined || ap.overwhelmFrequency) && (
-              <div>
-                <div className="text-sm font-semibold mb-2 flex items-center gap-2">
-                  <Activity className="h-4 w-4" />
-                  Emotions & Focus
-                </div>
-                <div className="space-y-2 text-sm">
-                  {ap.anxietyFrequency && (
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Anxiety Frequency:</span>
-                      <span>{ap.anxietyFrequency}</span>
-                    </div>
-                  )}
-                  {ap.focusEase !== undefined && (
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Focus Ease:</span>
-                      <span>{ap.focusEase}/5</span>
-                    </div>
-                  )}
-                  {ap.overwhelmFrequency && (
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Overwhelm Frequency:</span>
-                      <span>{ap.overwhelmFrequency}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
+          {/* Emotions & Focus */}
+          {(ap.anxietyFrequency || ap.overwhelmFrequency) && (
+            <ProfileSection title="Emotions & Focus" icon={Activity}>
+              {ap.anxietyFrequency && (
+                <ProfileRow label="Anxiety Frequency" value={ap.anxietyFrequency} icon={Heart} />
+              )}
+              {ap.overwhelmFrequency && (
+                <ProfileRow label="Overwhelm Frequency" value={ap.overwhelmFrequency} icon={Zap} />
+              )}
+            </ProfileSection>
+          )}
 
-            {/* Communication */}
-            {(ap.preferredCommunication || ap.eyeContactComfort !== undefined || ap.usesAAC) && (
-              <div>
-                <div className="text-sm font-semibold mb-2">Communication</div>
-                <div className="space-y-2 text-sm">
-                  {ap.preferredCommunication && (
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Preferred Method:</span>
-                      <span>{ap.preferredCommunication}</span>
-                    </div>
-                  )}
-                  {ap.eyeContactComfort !== undefined && (
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Eye Contact Comfort:</span>
-                      <span>{ap.eyeContactComfort}/5</span>
-                    </div>
-                  )}
-                  {ap.usesAAC && (
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Uses AAC:</span>
-                      <span>{ap.usesAAC}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
+          {/* Communication */}
+          {(ap.preferredCommunication || ap.eyeContactComfort !== undefined || ap.usesAAC) && (
+            <ProfileSection title="Communication" icon={MessageSquare}>
+              {ap.preferredCommunication && (
+                <ProfileRow label="Preferred Method" value={ap.preferredCommunication} icon={MessageSquare} />
+              )}
+              {ap.eyeContactComfort !== undefined && (
+                <ProfileRow label="Eye Contact Comfort" value={`${ap.eyeContactComfort}/5`} icon={Eye} />
+              )}
+              {ap.usesAAC && (
+                <ProfileRow label="Uses AAC" value={ap.usesAAC} />
+              )}
+            </ProfileSection>
+          )}
 
-            {/* Sensory Preferences */}
-            {(ap.sensorySensitivity !== undefined || ap.texturesUncomfortable || ap.sensorySeeking !== undefined) && (
-              <div>
-                <div className="text-sm font-semibold mb-2">Sensory Preferences</div>
-                <div className="space-y-2 text-sm">
-                  {ap.sensorySensitivity !== undefined && (
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Sensory Sensitivity:</span>
-                      <span>{ap.sensorySensitivity}/5</span>
-                    </div>
-                  )}
-                  {ap.texturesUncomfortable && (
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Textures Uncomfortable:</span>
-                      <span>{ap.texturesUncomfortable}</span>
-                    </div>
-                  )}
-                  {ap.sensorySeeking !== undefined && (
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Sensory Seeking:</span>
-                      <span>{ap.sensorySeeking}/5</span>
-                    </div>
-                  )}
+          {/* Strengths & Interests */}
+          {(ap.favoriteHobbies?.length || ap.specialInterestTime) && (
+            <ProfileSection title="Strengths & Interests" icon={Sparkles}>
+              {ap.favoriteHobbies && ap.favoriteHobbies.length > 0 && (
+                <div className="mb-4">
+                  <div className="text-[13px] text-[#8E8E93] mb-2">Favorite Hobbies</div>
+                  <div className="flex flex-wrap gap-2">
+                    {ap.favoriteHobbies.map((hobby, i) => (
+                      <Badge key={i}>{hobby}</Badge>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+              {ap.specialInterestTime && (
+                <ProfileRow label="Time on Interests" value={ap.specialInterestTime} />
+              )}
+            </ProfileSection>
+          )}
 
-            {/* Routines & Change */}
-            {(ap.routineImportance !== undefined || ap.upsetByChange !== undefined || ap.useOrganizationTools) && (
-              <div>
-                <div className="text-sm font-semibold mb-2">Routines & Change</div>
-                <div className="space-y-2 text-sm">
-                  {ap.routineImportance !== undefined && (
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Routine Importance:</span>
-                      <span>{ap.routineImportance}/5</span>
-                    </div>
-                  )}
-                  {ap.upsetByChange !== undefined && (
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Upset by Change:</span>
-                      <span>{ap.upsetByChange}/5</span>
-                    </div>
-                  )}
-                  {ap.useOrganizationTools && (
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Uses Organization Tools:</span>
-                      <span>{ap.useOrganizationTools}</span>
-                    </div>
-                  )}
-                </div>
+          {/* Social */}
+          {ap.hardSocialCues && ap.hardSocialCues.length > 0 && (
+            <ProfileSection title="Social Interaction" icon={Users}>
+              <div className="text-[13px] text-[#8E8E93] mb-2">Challenging Social Cues</div>
+              <div className="flex flex-wrap gap-2">
+                {ap.hardSocialCues.map((cue, i) => (
+                  <Badge key={i} variant="warning">{cue}</Badge>
+                ))}
               </div>
-            )}
-
-            {/* Strengths & Interests */}
-            {(ap.favoriteHobbies || ap.specialInterestTime || ap.absorptionLevel !== undefined) && (
-              <div>
-                <div className="text-sm font-semibold mb-2">Strengths & Interests</div>
-                <div className="space-y-2 text-sm">
-                  {ap.favoriteHobbies && ap.favoriteHobbies.length > 0 && (
-                    <div>
-                      <span className="text-muted-foreground">Favorite Hobbies:</span>
-                      <div className="flex flex-wrap gap-1 mt-1">
-                        {ap.favoriteHobbies.map((hobby, i) => (
-                          <Badge key={i} variant="secondary">{hobby}</Badge>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  {ap.specialInterestTime && (
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Time on Interests:</span>
-                      <span>{ap.specialInterestTime}</span>
-                    </div>
-                  )}
-                  {ap.absorptionLevel !== undefined && (
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Absorption Level:</span>
-                      <span>{ap.absorptionLevel}/5</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Social Interaction */}
-            {(ap.socialComfort !== undefined || ap.preferAloneVsOthers !== undefined || ap.hardSocialCues) && (
-              <div>
-                <div className="text-sm font-semibold mb-2">Social Interaction</div>
-                <div className="space-y-2 text-sm">
-                  {ap.socialComfort !== undefined && (
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Social Comfort:</span>
-                      <span>{ap.socialComfort}/5</span>
-                    </div>
-                  )}
-                  {ap.preferAloneVsOthers !== undefined && (
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Prefer Alone vs Others:</span>
-                      <span>{ap.preferAloneVsOthers}/5</span>
-                    </div>
-                  )}
-                  {ap.hardSocialCues && ap.hardSocialCues.length > 0 && (
-                    <div>
-                      <span className="text-muted-foreground">Challenging Social Cues:</span>
-                      <div className="flex flex-wrap gap-1 mt-1">
-                        {ap.hardSocialCues.map((cue, i) => (
-                          <Badge key={i} variant="secondary">{cue}</Badge>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+            </ProfileSection>
+          )}
+        </>
       )}
 
-      <div className="flex justify-end">
-        <Button onClick={() => router.push("/dashboard/caree")}>
-          Back to Dashboard
-        </Button>
-      </div>
+      {/* Back Button */}
+      <motion.button
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        onClick={() => router.push("/dashboard/caree")}
+        className="w-full py-4 bg-white dark:bg-[#2C2C2E] rounded-2xl shadow-sm text-[#007AFF] font-medium flex items-center justify-center gap-2 hover:bg-[#F2F2F7] dark:hover:bg-[#3A3A3C] transition-colors"
+      >
+        Back to Dashboard
+        <ChevronRight className="w-4 h-4" />
+      </motion.button>
     </div>
   )
 }

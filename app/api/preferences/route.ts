@@ -43,16 +43,16 @@ const preferencesSchema = z.object({
 });
 
 export async function GET() {
-  const session = await getServerSession(authOptions);
-  if (!session || !(session.user as any)?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const session: any = await getServerSession(authOptions);
+  if (!session || !session.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   await connectToDatabase();
   const pref = await Preferences.findOne({ userId: (session.user as any).id }).lean();
   return NextResponse.json({ preferences: pref || null });
 }
 
 export async function POST(req: Request) {
-  const session = await getServerSession(authOptions);
-  if (!session || !(session.user as any)?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const session: any = await getServerSession(authOptions);
+  if (!session || !session.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const body = await req.json().catch(() => null);
   console.log("[preferences] incoming body:", JSON.stringify(body));
   const parsed = preferencesSchema.safeParse(body);

@@ -13,7 +13,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       return NextResponse.json({ error: "No text provided" }, { status: 400 })
     }
 
-    const selectedVoice = voiceId || "Cz0K1kOv9tD8l0b5Qu53" // fallback voice
+    const selectedVoice = voiceId || "lcMyyd2HUfFzxdCaC4Ta" // fallback voice
 
     const url = `https://api.elevenlabs.io/v1/text-to-speech/${selectedVoice}`
 
@@ -26,7 +26,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       },
       body: JSON.stringify({
         text,
-        model_id: "eleven_multilingual_v2",
+        model_id: "eleven_multilingual_v3",
         optimize_streaming_latency: 0,
       }),
     })

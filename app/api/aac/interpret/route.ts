@@ -2,17 +2,35 @@ import { NextRequest, NextResponse } from "next/server"
 
 export async function POST(req: NextRequest) {
   try {
-    const { transcript, symbol } = await req.json()
+    const { transcript, symbol, symbols } = await req.json()
     const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || process.env.NEXT_PUBLIC_GOOGLE_API_KEY
     if (!apiKey) return NextResponse.json({ error: "Gemini not configured" }, { status: 500 })
 
-    // Use dynamic import and the call style you provided
     // @ts-ignore
     const mod: any = await import("@google/genai")
     const ai = new mod.GoogleGenAI({ apiKey })
 
-    const symbolName = symbol?.name || ""
-    const prompt = `You are assisting AAC communication. Given a raw transcript and an optional selected symbol name, output a concise, user-friendly word or short phrase best matching the user's intent. Prefer the symbol name if appropriate. Keep output under 6 words, plain text.\n\nTranscript: "${transcript}"\nSymbol: "${symbolName}"\nOutput only the final word or short phrase, no extra text.`
+    // Support both single symbol and multiple symbols
+    const symbolNames = symbols 
+      ? (Array.isArray(symbols) ? symbols : [symbols])
+      : (symbol?.name ? [symbol.name] : [])
+    
+    const symbolList = symbolNames.join(", ")
+
+    const prompt = `You are assisting AAC (Augmentative and Alternative Communication) for someone who may have difficulty speaking.
+
+Given a raw voice transcript and selected AAC symbols, create a clear, natural-sounding phrase that communicates what the person wants to say.
+
+Rules:
+- Combine the transcript meaning with the selected symbols
+- Make it sound natural and conversational
+- Keep it concise (under 10 words)
+- Output ONLY the final phrase, no explanations
+
+Transcript: "${transcript}"
+Selected symbols: ${symbolList || "none"}
+
+Final phrase:`
 
     const contents = [{ role: 'user', parts: [{ text: prompt }] }]
 
@@ -35,19 +53,19 @@ export async function POST(req: NextRequest) {
     }
     if (!text && lastErr) throw lastErr
 
-    // Robust fallback: prefer selected symbol name, else transcript first word
+    // Fallback: use symbols or transcript
     if (!text) {
-      if (symbolName) {
-        text = symbolName
+      if (symbolNames.length > 0) {
+        text = symbolNames.join(" ")
       } else if (typeof transcript === "string" && transcript.trim().length) {
-        text = transcript.trim().split(/\s+/).slice(0, 6).join(" ")
+        text = transcript.trim().split(/\s+/).slice(0, 8).join(" ")
       } else {
         text = ""
       }
     }
 
-    // Sanitize: ensure under 6 words, plain text
-    text = text.replace(/[\r\n]+/g, " ").trim().split(/\s+/).slice(0, 6).join(" ")
+    // Clean up
+    text = text.replace(/[\r\n]+/g, " ").replace(/^["']|["']$/g, "").trim()
     return NextResponse.json({ phrase: text })
   } catch (error: any) {
     console.error("[aac/interpret] error", error)

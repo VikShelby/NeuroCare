@@ -70,7 +70,7 @@ export const authOptions: NextAuthOptions = {
           });
         }
         (token as JWT & { profileCompleted?: boolean }).profileCompleted = dbUser.profileCompleted ?? false;
-        (token as JWT & { category?: string }).category = dbUser.category ?? undefined;
+        (token as JWT & { category?: string }).category = (dbUser as any).category ?? undefined;
         (token as JWT & { role?: "caree" | "caregiver" }).role = (dbUser as any).role ?? undefined;
       }
       // attach profileCompleted when we have user id but not via Google sign-up
@@ -79,7 +79,7 @@ export const authOptions: NextAuthOptions = {
         const dbUser = await User.findById((token as JWT & { id?: string }).id).select("profileCompleted category role");
         if (dbUser) {
           (token as JWT & { profileCompleted?: boolean }).profileCompleted = dbUser.profileCompleted ?? false;
-          (token as JWT & { category?: string }).category = dbUser.category ?? undefined;
+          (token as JWT & { category?: string }).category = (dbUser as any).category ?? undefined;
           (token as JWT & { role?: "caree" | "caregiver" }).role = (dbUser as any).role ?? undefined;
         }
       }

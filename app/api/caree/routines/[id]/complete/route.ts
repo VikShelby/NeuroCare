@@ -7,10 +7,12 @@ import User from "@/models/User"
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions as any)
+    const { id } = await params
+    
+    const session: any = await getServerSession(authOptions as any)
     if (!session?.user?.email) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
@@ -22,7 +24,7 @@ export async function POST(
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
-    const routine = await Routine.findOne({ _id: params.id, careeId: caree._id })
+    const routine = await Routine.findOne({ _id: id, careeId: caree._id })
     if (!routine) {
       return NextResponse.json({ error: "Routine not found" }, { status: 404 })
     }

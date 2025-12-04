@@ -20,6 +20,8 @@ export interface IUser {
   // Relationships
   caregiverId?: Types.ObjectId | null; // set on caree
   careeIds?: Types.ObjectId[] | null;  // set on caregiver
+  // Device for notifications
+  deviceId?: string | null;
     autismProfile?: {
     aboutMe?: string | null;
     interests?: string[];
@@ -74,6 +76,7 @@ const UserSchema = new Schema<IUser>(
     profileCompleted: { type: Boolean, default: false },
     caregiverId: { type: Schema.Types.ObjectId, ref: "User", default: null },
     careeIds: { type: [{ type: Schema.Types.ObjectId, ref: "User" }], default: [] },
+    deviceId: { type: String },
     autismProfile: {
       aboutMe: { type: String },
       interests: [{ type: String }],
